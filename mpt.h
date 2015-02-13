@@ -21,8 +21,8 @@ class mpt
   void printGw(const char* filename); // print out Gt
   void printSw(const char* filename); // print out Sw
   void printSt(const char* filename); // print out St
-  void Fourier(complex<double> Gt[],complex<double> Gf[]);// fourier transofrm
-  void InvFourier(complex<double> Gf[],complex<double> Gt[]);// inverse fourier transofrm
+  void Fourier(complex<double> Gt[],complex<double> Gw[]);// fourier transofrm
+  void InvFourier(complex<double> Gw[],complex<double> Gt[]);// inverse fourier transofrm
   
 
   complex<double>* omega;

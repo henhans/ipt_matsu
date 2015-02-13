@@ -176,20 +176,20 @@ void mpt::printSt(const char* filename)
 
 //--------------F to T: Prepare input data-----------
 
-void mpt::InvFourier(complex<double> Gf[],complex<double> Gt[])
+void mpt::InvFourier(complex<double> Gw[],complex<double> Gt[])
 { 
   int isign=-1;
   double* data = new double [2*_Nw+1];
   
   for (int i=0; i<_Nw/2; i++)
   {
-    data[2*i+1] = real(Gf[i]*exp1[i] );
-    data[2*i+2] = imag(Gf[i]*exp1[i] );
+    data[2*i+1] = real(Gw[i]*exp1[i] );
+    data[2*i+2] = imag(Gw[i]*exp1[i] );
   }
   for (int i=_Nw/2; i<_Nw; i++)
   {
-    data[2*i+1] = -1*real(Gf[i]*exp1[i] );
-    data[2*i+2] = -1*imag(Gf[i]*exp1[i] );
+    data[2*i+1] = -1*real(Gw[i]*exp1[i] );
+    data[2*i+2] = -1*imag(Gw[i]*exp1[i] );
   } 
 
   //cout<<"Inverse Fourier Transofrm"<<endl;
@@ -209,7 +209,7 @@ void mpt::InvFourier(complex<double> Gf[],complex<double> Gt[])
 
 //--------------T to F: Prepare input data-----------
 
-void mpt::Fourier(complex<double> Gt[],complex<double> Gf[])
+void mpt::Fourier(complex<double> Gt[],complex<double> Gw[])
 {
   int isign=1;
   double* data = new double [2*_Nw+1];
@@ -224,11 +224,11 @@ void mpt::Fourier(complex<double> Gt[],complex<double> Gf[])
   FFT(data, _Nw, isign);
 
   for (int i=0; i<_Nw/2; i++) {
-    Gf[i] = /*A_n[i]*/_Beta/(_Nw) * ((complex<double>( data[2*i+1], data[2*i+2] ))*conj(exp2[i])) ;
+    Gw[i] = /*A_n[i]*/_Beta/(_Nw) * ((complex<double>( data[2*i+1], data[2*i+2] ))*conj(exp2[i])) ;
     //cout<< G_f[i]<<endl;
   }
   for (int i=_Nw/2; i<_Nw; i++) {
-    Gf[i] = /*A_n[i]*/-1*_Beta/(_Nw) * ((complex<double>( data[2*i+1], data[2*i+2] ))*conj(exp2[i])) ;
+    Gw[i] = /*A_n[i]*/-1*_Beta/(_Nw) * ((complex<double>( data[2*i+1], data[2*i+2] ))*conj(exp2[i])) ;
     //cout<< G_f[i]<<endl;
   }
 
