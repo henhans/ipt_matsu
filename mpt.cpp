@@ -89,16 +89,16 @@ void mpt::im_solver()
   // fourier transform to tau space
   InvFourier(G0w,G0t);
   // calculate Sig(tau) using second order perturbation
-  double xjump=1;//0.25; //the jump in selfenergy
+  double xjump=0.25; //the jump in selfenergy
   for (int i=0; i<_Nw; i++) {
-     St[i]=G0t[i]*G0t[i]*G0t[_Nw-1-i]*xjump;// G(tau)^2*G(-tau)=G(tau)^2*G(Beta-tau)
-     //St[i]=G0t[i]*G0t[i]*G0t[i]*xjump;
+     St[i]=G0t[i]*G0t[i]*G0t[_Nw-1-i]*xjump;// -G(tau)^2*G(-tau)=G(tau)^2*G(Beta-tau)
+     //St[i]=G0t[i]*G0t[_Nw-1-i]*G0t[i]*xjump;
      //cout<< G0t[i] <<"\t" << G0t[_Nw-1-i] << endl;
   }
   Fourier(St,Sw);
   // calculate G(w) with selfenergy
   for (int i=0; i<_Nw; i++) {
-     Sw[i]=_U*_U*Sw[i]*xjump;
+     Sw[i]=_U*_U*Sw[i]/xjump;
      Gw[i] = 1.0/( (1/G0w[i]) - Sw[i]);
   }
 }
