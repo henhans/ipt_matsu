@@ -35,6 +35,7 @@ mpt::mpt( int Nw, double U, double T, double t )
   exp1= new complex<double> [Nw];
   exp2= new complex<double> [Nw];
   A_n= new double [Nw];
+  corr_wtot= new double [Nw];
 
   for (int i=0; i<_Nw; i++)
   {
@@ -46,34 +47,69 @@ mpt::mpt( int Nw, double U, double T, double t )
      Sw_old[i] = 0.0;
      St[i]  = 0.0;
      //omega[i] = double((2*i+1)*pi/_Beta);
-     tau[i]= double((i+0.5)*_Beta/_Nw);
-     exp1[i]=exp(complex<double> (0.0,-(i)*pi/Nw));
-     exp2[i]=exp(complex<double>(0.0,-(i+0.5)*pi/_Nw));
-     A_n[i]=sqr(sin((i+0.5)*pi/_Nw)/((i+0.5)*pi/_Nw));
+     tau[i] = double( (i+0.5)*_Beta/_Nw );
+     exp1[i] = exp( complex<double> (0.0,-(i+0.0)*pi/Nw) );
+     exp2[i] = exp( complex<double>( 0.0,-(i+0.5)*pi/_Nw) );
      //cout<< omega[i]<<"\t"<<exphalf[i]<<endl;
   }
+  // initial the omega (0,1,...,N/2-1,-N/2,-N/2+1,....-1)
   for (int i=0; i<_Nw/2; i++){
      omega[i] = complex<double>(0.0,(2*i+1)*pi/_Beta);
      omega[_Nw/2+i]=complex<double>(0.0,2*(_Nw/2+i-_Nw)+1.)*pi/_Beta;
+     A_n[i] = sqr( sin((i+0.5)*pi/_Nw ) / ( (i+0.5)*pi/_Nw) );
+     A_n[_Nw/2+i] = sqr( sin((_Nw/2+i-_Nw + 0.5)*pi/_Nw ) / ( (_Nw/2+i-_Nw+0.5)*pi/_Nw) );
+  }
+  // 
+  for (int i=0; i<_Nw; i++){
+    corr_wtot[i] = -0.5 * sign(tau[i]) + 2*_T*cal_corr_wtot(tau[i]);
+    //cout<< imag(omega[i])<<"\t"<<corr_wtot[i]<<endl;
   }
   //omega[_Nw/2]=complex<double>(1.0,0.0);
   //for (int i=0; i<+Nw; i++) cout<<imag(omega[i])<<endl;
   //cout << Init.omega[0]<< endl;
 }
 
-void mpt::init_gw() {
-  double d=6;
-  //double V=0.7;
+double mpt::cal_corr_wtot(double tau) {
+  double sum = 0.0;
 
-  for (int i=0; i<_Nw; i++){
-     double n=0.5;
-     double mu=_U/2;
-     //G0w[i]= /*V*V * 2/(d*d)*/ _t*_t * ( omega[i] - 1.0j*sign(imag(omega[i])) *
-     //           sqrt( - omega[i]*omega[i] + d*d) );//1/(omega[i]);
-     //G0w[i]=1/omega[i];
-     // initial for insulator in atomic limit
-     G0w[i]=( 1.0 - n ) / (omega[i] + mu ) + n / (omega[i] + mu - _U );
-     //cout << imag(omega[i]) <<"\t"<<imag(G0w[i])<< endl;
+  for (int i=0; i <_Nw/2; i++) {
+    sum += sin( imag(omega[i])*tau ) / imag(omega[i]);
+  }
+ 
+  return sum;
+}
+
+void mpt::init_gw(int in) {
+  double d=4;
+  //double V=0.7;
+  double n=0.5;
+  double mu=_U/2;
+
+  if(in==0) {
+     for (int i=0; i<_Nw; i++){
+        G0w[i]= /*V*V * 2/(d*d)*/ _t*_t * ( omega[i] - 1.0j*sign(imag(omega[i])) *
+                  sqrt( - omega[i]*omega[i] + d*d) );//1/(omega[i]);
+    }
+  }
+  else if(in==1) {
+     for (int i=0; i<_Nw; i++) {
+       //G0w[i]=1/omega[i];
+       // initial for insulator in atomic limit
+       G0w[i]=( 1.0 - n ) / (omega[i] + mu ) + n / (omega[i] + mu - _U );
+       //cout << imag(omega[i]) <<"\t"<<imag(G0w[i])<< endl;
+     }
+  }
+  else if(in==2) {
+     FILE *f;
+     f = fopen("Gw_final.dat", "r");
+     double temp1, temp2, temp3;
+     for(int i=0; i<_Nw; i++) {
+       fscanf(f,"%le %le %le",&temp1,&temp2,&temp3);
+       G0w[i]=complex<double> (temp2 , temp3);
+       //cout << temp1<<endl;
+     }
+     cout<<omega[0]<<"\t"<<G0w[0]<<endl;
+     fclose(f);
   }
 
 }
@@ -88,6 +124,7 @@ void mpt::im_solver()
 
   // fourier transform to tau space
   InvFourier(G0w,G0t);
+  //cout << "Gw to Gt done" << endl;
   // calculate Sig(tau) using second order perturbation
   double xjump=0.25; //the jump in selfenergy
   for (int i=0; i<_Nw; i++) {
@@ -96,10 +133,13 @@ void mpt::im_solver()
      //cout<< G0t[i] <<"\t" << G0t[_Nw-1-i] << endl;
   }
   Fourier(St,Sw);
+  //cout << "St to Sw done" << endl;
   // calculate G(w) with selfenergy
   for (int i=0; i<_Nw; i++) {
      Sw[i]=_U*_U*Sw[i]/xjump;
-     Gw[i] = 1.0/( (1/G0w[i]) - Sw[i]);
+     Sw[i]=complex<double>(0.0, imag(Sw[i]));
+     //Gw[i] = complex<double>(0.0,imag(1.0/( (1/G0w[i]) - Sw[i]) ) );
+     Gw[i] = 1.0/( (1/G0w[i]) - Sw[i]) ;
   }
 }
 
@@ -115,11 +155,11 @@ double mpt::get_diff()
   return diff;//TrapezIntegralMP( _Nw , diff , omega ); 
 }
 
-void mpt::update_G()
+void mpt::update_G(double mix)
 {
   for (int i=0; i<_Nw; i++)
   {
-    G0w[i] = Gw[i] ;
+    G0w[i] = (1-mix)*G0w[i]+mix*Gw[i] ;
   }
 
 }
@@ -196,7 +236,7 @@ void mpt::InvFourier(complex<double> Gw[],complex<double> Gt[])
   FFT(data, _Nw, isign);
 
   for (int i=0; i<_Nw; i++) {
-    Gt[i] = _T*(exp2[i] * complex<double>( data[2*i+1], data[2*i+2] )) ;//.
+    Gt[i] = _T*(exp2[i] * complex<double>( data[2*i+1], data[2*i+2] )) +  complex<double>(corr_wtot[i], 0.0)  ;//.
     //cout<< real(G_t[i])<<endl;
   }
   //for (int i=_Nw/2; i<_Nw; i++) {
@@ -224,11 +264,11 @@ void mpt::Fourier(complex<double> Gt[],complex<double> Gw[])
   FFT(data, _Nw, isign);
 
   for (int i=0; i<_Nw/2; i++) {
-    Gw[i] = /*A_n[i]*/_Beta/(_Nw) * ((complex<double>( data[2*i+1], data[2*i+2] ))*conj(exp2[i])) ;
+    Gw[i] = (A_n[i])*_Beta/(_Nw) * ((complex<double>( data[2*i+1], data[2*i+2] ))*conj(exp2[i])) ;
     //cout<< G_f[i]<<endl;
   }
   for (int i=_Nw/2; i<_Nw; i++) {
-    Gw[i] = /*A_n[i]*/-1*_Beta/(_Nw) * ((complex<double>( data[2*i+1], data[2*i+2] ))*conj(exp2[i])) ;
+    Gw[i] = A_n[i]*(-1)*_Beta/(_Nw) * ((complex<double>( data[2*i+1], data[2*i+2] ))*conj(exp2[i])) ;
     //cout<< G_f[i]<<endl;
   }
 

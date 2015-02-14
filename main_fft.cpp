@@ -13,12 +13,13 @@ int main(int argc, char* argv[])
   double U=2.2; // coulomb potential
   double T=0.02; // temperature
   double t=0.5;//hoping constant
+  int in=0;
 
   int Nit=400; // number of DMFT iteration
   double mix=1.0; // mixing constant for old and new solution
 
   mpt Mpt( Nw, U, T, t);
-  Mpt.init_gw();
+  Mpt.init_gw(in);
   //for(int i=0; i<Nw; i++) cout <<imag(Mpt.omega[i])<<"\t"<<real(Mpt.G0w[i]) <<"\t"<< imag(Mpt.G0w[i]) <<endl;
   Mpt.printG0w("Gw.dat");
   Mpt.InvFourier(Mpt.G0w,Mpt.G0t);

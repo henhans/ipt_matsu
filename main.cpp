@@ -9,15 +9,17 @@
 
 int main(int argc, char* argv[])
 {
-  int Nw=8192*16; //number of tau and omega points should be power of 2
-  double U=2.56; // coulomb potential
-  double T=0.025; // temperature
+  int Nw=1024*4; //number of tau and omega points should be power of 2
+  double U=2.96; // coulomb potential
+  double T=0.02; // temperature
   double t=0.5;//hoping constant
+  int in=0; // initialize option 0 for metal, 1 for insulator, 2 from file
+  double mix=1; // mixing between previous and current iterations
 
   int Nit=1000; // number of DMFT iteration
 
   mpt Mpt( Nw, U, T, t);
-  Mpt.init_gw();
+  Mpt.init_gw(in);
   Mpt.printG0w("Gw_init.dat");
   //Mpt.InvFourier(Mpt.G0w,Mpt.G0t);
   //Mpt.printG0t("Gt_init.dat");
@@ -32,15 +34,17 @@ int main(int argc, char* argv[])
     //cout << diff <<endl;
 
     // mixing solutions
-    if (diff<1e-6) 
+    if (diff<1e-5) 
       break;
-    Mpt.update_G();
+    Mpt.update_G(mix);
     printf("it= %i \t diff= %f \t G(iw_0)= %f \t S(iw_0)= %f \n", it, diff, imag(Mpt.Gw[0]), imag(Mpt.Sw[0]));
 
   }
 
   Mpt.printGw("Gw_final.dat"); 
   Mpt.printSw("Sw_final.dat");
+  Mpt.printG0t("Gt_final.dat");
+  Mpt.printSt("St_final.dat");
 
   return 0;
 }

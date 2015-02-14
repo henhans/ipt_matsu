@@ -11,14 +11,14 @@ class mpt
   public:
   mpt(int Nw,double U,double T, double t);
 
-  void init_gw(); // initiate green function in t space
+  void init_gw(int in); // initiate green function in t space
   void im_solver(); // impurity solver
-  void update_G(); //update Green's function
+  void update_G(double mix); //update Green's function
   double get_diff(); // calculate self energy difference betwen consecutive iterations
   //void get_G_G0(); // calculate Green's function G and G0
   void printG0w(const char* filename); // print out Gw
   void printG0t(const char* filename); // print out Gt
-  void printGw(const char* filename); // print out Gt
+  void printGw(const char* filename); // print out Gw
   void printSw(const char* filename); // print out Sw
   void printSt(const char* filename); // print out St
   void Fourier(complex<double> Gt[],complex<double> Gw[]);// fourier transofrm
@@ -37,7 +37,8 @@ class mpt
   complex<double>* St;
   complex<double>* exp1;
   complex<double>* exp2;
-  double* A_n;
+  double* corr_wtot;//correction term
+  double* A_n;//attenuation factor
   //complex<double>* G;
 
   //void init_funcs();
@@ -52,6 +53,7 @@ class mpt
   double _dtau;// the difference between tau grids
 
   void FFT(double data[], unsigned long N, int isign);//Fast fourier routine fomr numerical recipie
+  double cal_corr_wtot(double tau); // calculate high frequency correction
 };
 
 #endif
