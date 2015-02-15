@@ -5,7 +5,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fftw3.h>
 
 #ifdef _OMP
 #include <omp.h>
@@ -129,10 +128,8 @@ void mpt::im_solver()
   // calculate Sig(tau) using second order perturbation
   double xjump=0.25; //the jump in selfenergy
   for (int i=0; i<_Nw; i++) {
-     St[i]=complex<double> ( real(G0t[i]*G0t[i]*G0t[_Nw-1-i]), 0.0)*xjump;// -G(tau)^2*G(-tau)=G(tau)^2*G(Beta-tau)
-     // take the real part of G0t to enforce the symmetry of fouriere can increase the accuracy
-     // this can make the calculation close to critical point as well as close to Uc2!
-     //St[i]=G0t[i]*G0t[i]*G0t[i]*xjump;
+     St[i]=G0t[i]*G0t[i]*G0t[_Nw-1-i]*xjump;// -G(tau)^2*G(-tau)=G(tau)^2*G(Beta-tau)
+     //St[i]=G0t[i]*G0t[_Nw-1-i]*G0t[i]*xjump;
      //cout<< G0t[i] <<"\t" << G0t[_Nw-1-i] << endl;
   }
   Fourier(St,Sw);
@@ -141,8 +138,6 @@ void mpt::im_solver()
   for (int i=0; i<_Nw; i++) {
      Sw[i]=_U*_U*Sw[i]/xjump;
      Sw[i]=complex<double>(0.0, imag(Sw[i]));
-     // Here we also enforce the symmetry of the half filling (at halfilling the real part is zero)
-     // This can also makes the low temperature and Uc2 calculation more stable.
      //Gw[i] = complex<double>(0.0,imag(1.0/( (1/G0w[i]) - Sw[i]) ) );
      Gw[i] = 1.0/( (1/G0w[i]) - Sw[i]) ;
   }
@@ -219,77 +214,9 @@ void mpt::printSt(const char* filename)
 
 }
 
-// try fftw3 package
-void mpt::InvFourier(complex<double> Gw[],complex<double> Gt[])
-{
-  fftw_complex in[_Nw], out[_Nw]; /* double [2] */
-  fftw_plan p;
-
-  for (int i=0; i<_Nw/2; i++)
-  {
-    in[i][0] = real(Gw[i]*exp1[i] );
-    in[i][1] = imag(Gw[i]*exp1[i] );
-  }
-  for (int i=_Nw/2; i<_Nw; i++)
-  {
-    in[i][0] = -1*real(Gw[i]*exp1[i] );
-    in[i][1] = -1*imag(Gw[i]*exp1[i] );
-  }
-
-  //cout<<"Inverse Fourier Transofrm"<<endl;
-  p = fftw_plan_dft_1d(_Nw, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-  fftw_execute(p);
-
-  for (int i=0; i<_Nw; i++) {
-    Gt[i] = _T*(exp2[i] * complex<double>( out[i][0], out[i][1] )) +  complex<double>(corr_wtot[i], 0.0)  ;//.
-    //cout<< real(G_t[i])<<endl;
-  }
-
-  fftw_destroy_plan(p);
-  //for (int i=_Nw/2; i<_Nw; i++) {
-  //  Gt[i] = _T*(exp2[i-_Nw] * complex<double>( data[2*i+1], data[2*i+2] )) ;//.
-    //cout<< real(G_t[i])<<endl;
-  //}
-
-}
-
-//--------------T to F: Prepare input data-----------
-
-void mpt::Fourier(complex<double> Gt[],complex<double> Gw[])
-{
-  fftw_complex in[_Nw], out[_Nw]; /* double [2] */
-  fftw_plan p;
-
-  for (int i=0; i<_Nw; i++)
-  {
-    in[i][0] = real( Gt[i] *conj(exp1[i]) );
-    in[i][1] = imag( Gt[i] *conj(exp1[i]) );
-  }
-
-  //cout<<"Fourier Transofrm"<<endl;
-  p = fftw_plan_dft_1d(_Nw, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
-  fftw_execute(p);
-
-  for (int i=0; i<_Nw/2; i++) {
-    Gw[i] = A_n[i]*_Beta/(_Nw) * ( (complex<double>( out[i][0], out[i][1] ))*conj(exp2[i]) );
-//                                 - exp( complex<double>( 0.0, imag(omega[i])*tau[0] ) )* Gt[0]
-//                                  - exp( complex<double>( 0.0, imag(omega[i])*tau[_Nw-1] )) * Gt[_Nw-1] ) ;
-    //cout<< G_f[i]<<endl;
-  }
-  for (int i=_Nw/2; i<_Nw; i++) {
-    Gw[i] = A_n[i]*(-1)*_Beta/(_Nw) * ( (complex<double>( out[i][0], out[i][1] ))*conj(exp2[i]) );
-//                                  - exp( complex<double>( 0.0, imag(omega[i])*tau[0] ) )* Gt[0]
-//                                  - exp( complex<double>( 0.0, imag(omega[i])*tau[_Nw-1] )) * Gt[_Nw-1] ) ;
-    //cout<< G_f[i]<<endl;
-  }
-
-  fftw_destroy_plan(p);
-}
-
-
 //--------------F to T: Prepare input data-----------
 
-/*void mpt::InvFourier(complex<double> Gw[],complex<double> Gt[])
+void mpt::InvFourier(complex<double> Gw[],complex<double> Gt[])
 { 
   int isign=-1;
   double* data = new double [2*_Nw+1];
@@ -347,11 +274,11 @@ void mpt::Fourier(complex<double> Gt[],complex<double> Gw[])
 
   delete [] data;
 
-}*/
+}
 
 
 //----------Fast Fourier-----------------------------
-/*#define SWAP(a,b) tempr=(a);(a)=(b);(b)=tempr
+#define SWAP(a,b) tempr=(a);(a)=(b);(b)=tempr
 
 void mpt::FFT(double data[], unsigned long N, int isign)
 {
@@ -398,4 +325,4 @@ void mpt::FFT(double data[], unsigned long N, int isign)
 		mmax=istep;
 	}
 }
-#undef SWAP*/
+#undef SWAP

@@ -9,8 +9,8 @@
 
 int main(int argc, char* argv[])
 {
-  int Nw=1024*32; //number of tau and omega points should be power of 2
-  double U=3.1; // coulomb potential
+  int Nw=1024*16; //number of tau and omega points should be power of 2
+  double U=3.2; // coulomb potential
   double T=0.01; // temperature
   double t=0.5;//hoping constant
   int in=0; // initialize option 0 for metal, 1 for insulator, 2 from file
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     //cout << diff <<endl;
 
     // mixing solutions
-    if (diff<1e-5) 
+    if (diff<1e-7) 
       break;
     Mpt.update_G(mix);
     printf("it= %i \t diff= %f \t G(iw_0)= %f \t S(iw_0)= %f \n", it, diff, imag(Mpt.Gw[0]), imag(Mpt.Sw[0]));

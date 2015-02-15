@@ -129,8 +129,10 @@ void mpt::im_solver()
   // calculate Sig(tau) using second order perturbation
   double xjump=0.25; //the jump in selfenergy
   for (int i=0; i<_Nw; i++) {
-     St[i]=G0t[i]*G0t[i]*G0t[_Nw-1-i]*xjump;// -G(tau)^2*G(-tau)=G(tau)^2*G(Beta-tau)
-     //St[i]=G0t[i]*G0t[_Nw-1-i]*G0t[i]*xjump;
+     St[i]=complex<double> ( real(G0t[i]*G0t[i]*G0t[_Nw-1-i]), 0.0)*xjump;// -G(tau)^2*G(-tau)=G(tau)^2*G(Beta-tau)
+     // take the real part of G0t to enforce the symmetry of fouriere can increase the accuracy
+     // this can make the calculation close to critical point as well as close to Uc2!
+     //St[i]=G0t[i]*G0t[i]*G0t[i]*xjump;
      //cout<< G0t[i] <<"\t" << G0t[_Nw-1-i] << endl;
   }
   Fourier(St,Sw);
@@ -139,6 +141,8 @@ void mpt::im_solver()
   for (int i=0; i<_Nw; i++) {
      Sw[i]=_U*_U*Sw[i]/xjump;
      Sw[i]=complex<double>(0.0, imag(Sw[i]));
+     // Here we also enforce the symmetry of the half filling (at halfilling the real part is zero)
+     // This can also makes the low temperature and Uc2 calculation more stable.
      //Gw[i] = complex<double>(0.0,imag(1.0/( (1/G0w[i]) - Sw[i]) ) );
      Gw[i] = 1.0/( (1/G0w[i]) - Sw[i]) ;
   }
@@ -267,11 +271,15 @@ void mpt::Fourier(complex<double> Gt[],complex<double> Gw[])
   fftw_execute(p);
 
   for (int i=0; i<_Nw/2; i++) {
-    Gw[i] = (A_n[i])*_Beta/(_Nw) * ((complex<double>( out[i][0], out[i][1] ))*conj(exp2[i])) ;
+    Gw[i] = A_n[i]*_Beta/(_Nw) * ( (complex<double>( out[i][0], out[i][1] ))*conj(exp2[i]) );
+//                                 - exp( complex<double>( 0.0, imag(omega[i])*tau[0] ) )* Gt[0]
+//                                  - exp( complex<double>( 0.0, imag(omega[i])*tau[_Nw-1] )) * Gt[_Nw-1] ) ;
     //cout<< G_f[i]<<endl;
   }
   for (int i=_Nw/2; i<_Nw; i++) {
-    Gw[i] = A_n[i]*(-1)*_Beta/(_Nw) * ((complex<double>( out[i][0], out[i][1] ))*conj(exp2[i])) ;
+    Gw[i] = A_n[i]*(-1)*_Beta/(_Nw) * ( (complex<double>( out[i][0], out[i][1] ))*conj(exp2[i]) );
+//                                  - exp( complex<double>( 0.0, imag(omega[i])*tau[0] ) )* Gt[0]
+//                                  - exp( complex<double>( 0.0, imag(omega[i])*tau[_Nw-1] )) * Gt[_Nw-1] ) ;
     //cout<< G_f[i]<<endl;
   }
 

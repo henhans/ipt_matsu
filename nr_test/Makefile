@@ -1,5 +1,5 @@
 CC = icpc#g++#mpicxx#icpc
-FLAGS = -O3 -g -lfftw3 #-lm #-D_OMP -openmp #-fopenmp
+FLAGS = -O3 -g #-D_OMP -openmp #-fopenmp
 #LFLAGS = #
 OBJECTS = mpt.o routines.o main.o
 
