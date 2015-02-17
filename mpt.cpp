@@ -33,6 +33,7 @@ mpt::mpt( int Nw, double U, double T, double t )
   Sw  = new complex<double> [Nw];
   Sw_old = new complex<double> [Nw];
   St  = new complex<double> [Nw];
+  Gt  = new complex<double> [Nw];
   exp1= new complex<double> [Nw];
   exp2= new complex<double> [Nw];
   A_n= new double [Nw];
@@ -47,6 +48,7 @@ mpt::mpt( int Nw, double U, double T, double t )
      Sw[i]  = 0.0;
      Sw_old[i] = 0.0;
      St[i]  = 0.0;
+     Gt[i]  = 0.0;
      //omega[i] = double((2*i+1)*pi/_Beta);
      tau[i] = double( (i+0.5)*_Beta/_Nw );
      exp1[i] = exp( complex<double> (0.0,-(i+0.0)*pi/Nw) );
@@ -218,6 +220,17 @@ void mpt::printSt(const char* filename)
   fclose(f);
 
 }
+
+void mpt::printGt(const char* filename)
+{
+  FILE *f;
+  f = fopen(filename, "w");
+  for(int i=0; i<_Nw; i++)
+     fprintf(f,"%.15le %.15le %.15le\n", tau[i], real(Gt[i]), imag(Gt[i]));
+  fclose(f);
+
+}
+
 
 // try fftw3 package
 void mpt::InvFourier(complex<double> Gw[],complex<double> Gt[])

@@ -10,10 +10,10 @@
 int main(int argc, char* argv[])
 {
   int Nw=1024*16; //number of tau and omega points should be power of 2
-  double U=3.2; // coulomb potential
+  double U=2.9; // coulomb potential
   double T=0.01; // temperature
   double t=0.5;//hoping constant
-  int in=0; // initialize option 0 for metal, 1 for insulator, 2 from file
+  int in=1; // initialize option 0 for metal, 1 for insulator, 2 from file
   double mix=1; // mixing between previous and current iterations
 
   int Nit=1000; // number of DMFT iteration
@@ -43,7 +43,8 @@ int main(int argc, char* argv[])
 
   Mpt.printGw("Gw_final.dat"); 
   Mpt.printSw("Sw_final.dat");
-  Mpt.printG0t("Gt_final.dat");
+  Mpt.InvFourier(Mpt.Gw,Mpt.Gt);
+  Mpt.printGt("Gt_final.dat");
   Mpt.printSt("St_final.dat");
 
   return 0;
